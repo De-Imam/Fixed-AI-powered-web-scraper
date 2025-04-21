@@ -1,8 +1,9 @@
-from textblob import TextBlob
+from transformers import pipeline
 
+# Load the pre-trained sentiment-analysis model
+sentiment_analyzer = pipeline("sentiment-analysis")
+
+# Analyze sentiment using Hugging Face
 def analyze_sentiment(text):
-    if not text.strip():
-        return "No content"
-    blob = TextBlob(text)
-    polarity = blob.sentiment.polarity
-    return f"Sentiment polarity: {polarity:.2f} ({'Positive' if polarity > 0 else 'Negative' if polarity < 0 else 'Neutral'})"
+    result = sentiment_analyzer(text)
+    return result[0]['label']  # 'POSITIVE' or 'NEGATIVE'
