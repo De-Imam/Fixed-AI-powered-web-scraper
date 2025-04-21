@@ -1,16 +1,44 @@
-import requests
+import aiohttp
+import asyncio
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
+import time
 
-def scrape_page(url):
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-        paragraphs = soup.find_all('p')
-        return ' '.join(p.get_text() for p in paragraphs if p.get_text())
-    except Exception as e:
-        print(f"[Error scraping {url}]: {e}")
-        return ""
+# Function to handle JavaScript-rendered websites using Selenium
+def scrape_dynamic_content(url):
+    options = Options()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(executable_path='/path/to/chromedriver', options=options)
+    driver.get(url)
+    time.sleep(5)  # Wait for content to load
+    html = driver.page_source
+    driver.quit()
+
+    soup = BeautifulSoup(html, 'html.parser')
+    paragraphs = soup.find_all('p')
+    return ' '.join([p.get_text() for p in paragraphs])
+
+# Asynchronous scraping with aiohttp
+async def scrape_url(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                html = await response.text()
+                soup = BeautifulSoup(html, 'html.parser')
+                paragraphs = soup.find_all('p')
+                text = ' '.join([p.get_text() for p in paragraphs])
+                return {'url': url, 'text': text}
+            return {'url': url, 'text': ''}
+
+# Asynchronous entry point to scrape multiple URLs
+async def scrape_all_urls(urls):
+    tasks = [scrape_url(url) for url in urls]
+    results = await asyncio.gather(*tasks)
+
+    # For websites that need JavaScript rendering, we scrape them using Selenium
+    for result in results:
+        if not result['text']:  # If the text is empty, try scraping with Selenium
+            result['text'] = scrape_dynamic_content(result['url'])
+    
+    return results
