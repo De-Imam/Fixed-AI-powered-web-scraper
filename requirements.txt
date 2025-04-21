@@ -1,3 +1,4 @@
-beautifulsoup4
-requests
-textblob
+aiohttp==3.8.1
+selenium==4.1.0
+beautifulsoup4==4.10.0
+transformers==4.18.0
